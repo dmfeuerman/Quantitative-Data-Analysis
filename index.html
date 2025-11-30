@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:3000; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+    <title>Comprehensive Stock Data Fetcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .alert {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .result-section {
+            margin-bottom: 30px;
+        }
+
+        .result-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-item label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .info-item .value {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .metric-positive {
+            color: #10b981;
+        }
+
+        .metric-negative {
+            color: #ef4444;
+        }
+
+        .error {
+            background: #fee;
+            border: 2px solid #f88;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .success {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .json-viewer {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: #666;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s;
+            width: auto;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            margin-bottom: -2px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .connection-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .status-checking {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-connected {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-disconnected {
+            background: #fee;
+            color: #c00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Comprehensive Stock Data Fetcher</h1>
+            <p>Fetch SEC filings, financial data, and risk metrics for any US stock</p>
+        </div>
+
+        <div class="card">
+            <div id="connectionStatus" class="connection-status status-checking">
+                Checking server connection...
+            </div>
+
+            <div class="input-section">
+                <div class="input-group">
+                    <label for="ticker">Stock Ticker Symbol</label>
+                    <input type="text" id="ticker" placeholder="e.g., AAPL, MSFT, GOOGL" value="AAPL">
+                </div>
+                <div class="input-group">
+                    <label for="startDate">Start Date</label>
+                    <input type="date" id="startDate" value="2020-01-01">
+                </div>
+                <div class="input-group">
+                    <label for="endDate">End Date</label>
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="includeBenchmark">
+                <label for="includeBenchmark" style="margin-bottom: 0;">Include S&P 500 Benchmark Comparison</label>
+            </div>
+
+            <button id="fetchBtn" onclick="fetchStockData()">Fetch Stock Data</button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Fetching comprehensive stock data...</p>
+                <p style="font-size: 0.9em; color: #666; margin-top: 10px;">This may take 10-15 seconds</p>
+            </div>
+
+            <div class="error" id="error"></div>
+            <div class="success" id="success"></div>
+        </div>
+
+        <div class="results card" id="results">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab(event, 'summary')">Summary</button>
+                <button class="tab" onclick="showTab(event, 'ratios')">Financial Ratios</button>
+                <button class="tab" onclick="showTab(event, 'risk')">Risk Metrics</button>
+                <button class="tab" onclick="showTab(event, 'quant')">Quant Analytics</button>
+
+                <button class="tab" onclick="showTab(event, 'raw')">Raw Data (JSON)</button>
+            </div>
+
+            <div id="summary" class="tab-content active">
+                <div class="result-section">
+                    <h2>Company Information</h2>
+                    <div class="info-grid" id="companyInfo"></div>
+                </div>
+            </div>
+
+            <div id="ratios" class="tab-content">
+                <div class="result-section">
+                    <h2>Financial Ratios</h2>
+                    <div class="info-grid" id="ratiosGrid"></div>
+                </div>
+            </div>
+
+            <div id="risk" class="tab-content">
+                <div class="result-section">
+                    <h2>Risk & Performance Metrics</h2>
+                    <div class="info-grid" id="riskGrid"></div>
+                </div>
+            </div>
+
+            <div id="raw" class="tab-content">
+                <div class="result-section">
+                    <h2>Complete Data Export</h2>
+                    <button onclick="downloadJSON()" style="width: auto; margin-bottom: 15px;">Download JSON</button>
+                    <div class="json-viewer" id="jsonData"></div>
+                </div>
+            </div>
+            <div id="quant" class="tab-content">
+    <div class="result-section">
+        <h2>Quantitative Analysis Dashboard</h2>
+        <div class="info-grid" id="quantGrid"></div>
+    </div>
+</div>
+
+        </div>
+    </div>
+
+<script>
+const API_URL = 'http://localhost:3000';
+let stockData = null;
+
+document.getElementById('endDate').valueAsDate = new Date();
+checkServerConnection();
+
+async function checkServerConnection() {
+    const statusDiv = document.getElementById('connectionStatus');
+    try {
+        const response = await fetch(`${API_URL}/health`);
+        statusDiv.className = 'connection-status status-connected';
+        statusDiv.textContent = '✓ Connected';
+    } catch {
+        statusDiv.className = 'connection-status status-disconnected';
+        statusDiv.innerHTML = '✗ Backend not running';
+        document.getElementById("fetchBtn").disabled = true;
+    }
+}
+
+function showTab(event, tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    event.target.classList.add('active');
+}
+
+// ================= FETCH DATA =================
+
+async function fetchStockData() {
+    const ticker = document.getElementById('ticker').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const includeBenchmark = document.getElementById('includeBenchmark').checked;
+
+    toggleLoading(true);
+
+    try {
+        const res = await fetch(`${API_URL}/api/fetch-stock`, {
+            method: "POST",
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ticker, startDate, endDate, includeBenchmark})
+        });
+
+        const data = await res.json();
+        stockData = data;
+
+        displayResults(data);
+        showSuccess("Quantitative data loaded successfully");
+
+    } catch (err) {
+        showError(err.message);
+    }
+
+    toggleLoading(false);
+}
+
+// ================= DISPLAY DATA =================
+
+function displayResults(data) {
+
+    /* -- COMPANY INFO -- */
+    const companyInfo = document.getElementById('companyInfo');
+    companyInfo.innerHTML = `
+        ${createInfo("Company Name", data.SEC_Company_Info?.name)}
+        ${createInfo("Ticker", data.ticker)}
+        ${createInfo("CIK", data.cik)}
+        ${createInfo("Industry", data.SEC_Company_Info?.sicDescription)}
+        ${createInfo("Fiscal Year", data.SEC_Company_Info?.fiscalYearEnd)}
+    `;
+
+    renderSection("ratiosGrid", data.Financial_Ratios);
+    renderSection("riskGrid", data.Risk_Metrics);
+    renderQuantDashboard(data.Financial_Ratios);
+
+    document.getElementById("jsonData").textContent = JSON.stringify(data, null, 2);
+    document.getElementById("results").style.display = "block";
+}
+
+// ================= QUANT DASHBOARD =================
+
+function renderQuantDashboard(ratios) {
+    const quantGrid = document.getElementById("quantGrid");
+
+    const quantCategories = {
+        "Profitability": [
+            "grossMargin", "operatingMargin", "netMargin", "ebitdaMargin", 
+            "roa", "roe", "roic", "roce"
+        ],
+        "Valuation": [
+            "peRatio", "forwardPERatio", "priceToSales", "priceToBook",
+            "evToEbitda", "evToRevenue", "fcfYield", "dividendYield", "pegRatio"
+        ],
+        "Growth": [
+            "revenueGrowth", "epsGrowth", "fcfGrowth", "threeYearCAGR", "fiveYearCAGR"
+        ],
+        "Risk": [
+            "beta", "volatility", "sharpeRatio", "sortinoRatio", "maxDrawdown", "valueAtRisk"
+        ],
+        "Balance Sheet Strength": [
+            "debtToEquity", "debtToEbitda", "interestCoverage", "currentRatio", "quickRatio"
+        ],
+        "Capital Allocation": [
+            "buybackYield", "dividendPayoutRatio", "capexToRevenue", "assetTurnover"
+        ],
+        "Efficiency & Returns": [
+            "inventoryTurnover", "receivablesTurnover", "freeCashFlowMargin"
+        ]
+    };
+
+    let html = "";
+
+    for (const [category, metrics] of Object.entries(quantCategories)) {
+
+        html += `
+            <div style="grid-column: 1/-1;"><h3 style="color:#667eea;">${category}</h3></div>
+        `;
+
+        metrics.forEach(metric => {
+            if (metric in ratios) {
+                html += `
+                    <div class="info-item">
+                        <label>${prettify(metric)}</label>
+                        <div class="value ${getMetricColor(metric, ratios[metric])}">
+                            ${formatValue(metric, ratios[metric])}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    quantGrid.innerHTML = html || "<p>No quant metrics available</p>";
+}
+
+// ================= GENERIC SECTION RENDER =================
+
+function renderSection(id, data) {
+    const grid = document.getElementById(id);
+
+    if (!data || Object.keys(data).length === 0) {
+        grid.innerHTML = "<p>No data available</p>";
+        return;
+    }
+
+    grid.innerHTML = Object.entries(data).map(([k,v])=> `
+        <div class="info-item">
+           <label>${prettify(k)}</label>
+           <div class="value ${getMetricColor(k,v)}">${formatValue(k,v)}</div>
+        </div>
+    `).join('');
+}
+
+// ================= HELPERS =================
+
+function createInfo(label, value) {
+    return `
+        <div class="info-item">
+            <label>${label}</label>
+            <div class="value">${value || 'N/A'}</div>
+        </div>
+    `;
+}
+
+function prettify(key) {
+    return key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase());
+}
+
+function formatValue(key, value) {
+    if(value === null || value === undefined) return "N/A";
+
+    const percentWords = ["margin", "return", "growth", "yield", "drawdown"];
+    if (percentWords.some(w => key.toLowerCase().includes(w)))
+        return value.toFixed(2) + "%";
+
+    if (typeof value === "number") return value.toFixed(4);
+    return value;
+}
+
+function getMetricColor(key, value) {
+    if(value === null) return "";
+    if(key.toLowerCase().includes("return") && value > 0) return "metric-positive";
+    if(key.toLowerCase().includes("return") && value < 0) return "metric-negative";
+    if(key === "sharpeRatio" && value > 1) return "metric-positive";
+    if(key === "maxDrawdown") return "metric-negative";
+    return "";
+}
+
+function toggleLoading(state) {
+    document.getElementById("loading").style.display = state ? "block" : "none";
+    document.getElementById("fetchBtn").disabled = state;
+}
+
+function showError(msg) {
+    const el = document.getElementById("error");
+    el.innerText = msg;
+    el.style.display = "block";
+}
+
+function showSuccess(msg) {
+    const el = document.getElementById("success");
+    el.innerText = msg;
+    el.style.display = "block";
+}
+
+function downloadJSON() {
+    if (!stockData) return;
+
+    const blob = new Blob([JSON.stringify(stockData, null, 2)], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${stockData.ticker}_quant_data.json`;
+    a.click();
+}
+</script>
+
+
+</body>
+</html>

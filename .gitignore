@@ -1,0 +1,9 @@
+*.xlsx
+*.csv
+*.xlsx
+__pycache__/*
+*.zip
+node_modules/*
+packages/*
+stock_data/*
+test.py
