@@ -7,3 +7,4 @@ node_modules/*
 packages/*
 stock_data/*
 test.py
+*.env
