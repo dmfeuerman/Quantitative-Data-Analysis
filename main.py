@@ -278,6 +278,7 @@ class ComprehensiveDataFetcher:
                     df = financials[metric]
                     if "val" in df.columns and len(df) > 1:
                         df_sorted = df.sort_values("end")
+                        print(df_sorted.head())
                         values = df_sorted["val"].values
                         
                         if len(values) >= 2:
@@ -594,8 +595,8 @@ class ComprehensiveDataFetcher:
         
         self.excel.set_path(ticker)
         self.excel.walk()
-        
-        self.remove_non_used_data()
+        exit(1)
+        #self.remove_non_used_data()
     
     def remove_non_used_data(self):
 

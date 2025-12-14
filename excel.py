@@ -57,6 +57,17 @@ class EXCEL_WALKER:
             
             # Read the CSV file into a pandas DataFrame
             df_new_sheet = pd.read_csv(csv_file)
+            df_new_sheet = df_new_sheet.rename(columns= {
+            'val': 'Value',
+            'end': 'Period_End_Date',
+            'start': 'Period_Start_Date',
+            'accn': 'Accession_Number',
+            'fy': 'Fiscal_Year',
+            'fp': 'Fiscal_Period',
+            'form': 'Form_Type',
+            'filed': 'Filing_Date',
+            'frame': 'Reporting_Frame'
+        })
             
             # Check if the sheet name already exists and remove it to overwrite if needed
             if new_sheet_name in book.sheetnames:

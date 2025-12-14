@@ -8,3 +8,6 @@ packages/*
 stock_data/*
 test.py
 *.env
+*.json
+*.xls
+*.txt
